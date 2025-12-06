@@ -1,8 +1,8 @@
 #!/bin/bash
-# Skrypt do uruchomienia treningu modelu Herbert
+# Skrypt do uruchomienia treningu modelu Herbert z PyTorch Lightning
 
 echo "==================================================="
-echo "FINE-TUNING MODELU HERBERT NA DEANONIMIZACJI"
+echo "TRENING MODELU HERBERT (PyTorch Lightning)"
 echo "==================================================="
 
 # Sprawdź czy istnieją pliki danych
@@ -16,10 +16,11 @@ if [ ! -f "data/nask_train/anonymized.txt" ]; then
     exit 1
 fi
 
-# Domyślne parametry (batch_size=1 aby zmieścić się w pamięci)
+# Domyślne parametry
 MODEL=${1:-"allegro/herbert-base-cased"}
 EPOCHS=${2:-3}
 BATCH_SIZE=${3:-1}
+ACCUMULATE=${4:-8}
 OUTPUT_DIR="models/herbert-deanonymized"
 
 echo ""
@@ -27,6 +28,8 @@ echo "Parametry treningu:"
 echo "  - Model bazowy: $MODEL"
 echo "  - Epochs: $EPOCHS"
 echo "  - Batch size: $BATCH_SIZE"
+echo "  - Gradient accumulation: $ACCUMULATE"
+echo "  - Efektywny batch size: $((BATCH_SIZE * ACCUMULATE))"
 echo "  - Output: $OUTPUT_DIR"
 echo ""
 
@@ -39,7 +42,7 @@ python src/scripts/train.py \
     --epochs "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
     --learning-rate 5e-5 \
-    --save-steps 500
+    --accumulate "$ACCUMULATE"
 
 echo ""
 echo "==================================================="

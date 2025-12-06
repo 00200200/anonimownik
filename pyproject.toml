@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.3.3",
     "protobuf>=6.33.2",
     "python-dotenv>=1.2.1",
+    "pytorch-lightning>=2.0.0",
     "regex>=2025.11.3",
     "sacremoses>=0.1.1",
     "torch>=2.0.0",
