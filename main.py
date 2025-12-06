@@ -1,33 +1,15 @@
-"""Główny skrypt anonimizacji tekstu"""
 
 from src.masks import mask_text, find_entities
 
 
 def anonymize(text: str) -> str:
-    """
-    Anonimizuje tekst zamieniając wykryte dane na tokeny.
 
-    Args:
-        text: Tekst do zanonimizowania
-
-    Returns:
-        Zamaskowany tekst
-    """
     masked, entities = mask_text(text)
     return masked
 
 
 def anonymize_with_details(text: str) -> dict:
-    """
-    Anonimizuje tekst i zwraca szczegóły.
 
-    Returns:
-        {
-            "original": tekst oryginalny,
-            "anonymized": tekst zamaskowany,
-            "entities": lista wykrytych entities
-        }
-    """
     masked, entities = mask_text(text)
     return {"original": text, "anonymized": masked, "entities": entities}
 
