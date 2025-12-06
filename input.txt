@@ -1,0 +1,3 @@
+Sprawę prowadzi [name] [surname] Tel [phone] pok 005.
+
+Nazywam się [name] [surname], mam [age] lat ([sex]), mieszkam w [city] na [address].

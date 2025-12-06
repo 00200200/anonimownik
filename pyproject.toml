@@ -5,10 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "accelerate>=0.20.0",
+    "datasets>=2.14.0",
+    "huggingface>=0.0.1",
     "langchain-openai>=1.1.0",
     "numpy>=2.3.5",
     "pandas>=2.3.3",
+    "protobuf>=6.33.2",
     "python-dotenv>=1.2.1",
     "regex>=2025.11.3",
+    "sacremoses>=0.1.1",
+    "torch>=2.0.0",
     "transformers>=4.57.3",
 ]
