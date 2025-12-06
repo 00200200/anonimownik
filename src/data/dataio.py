@@ -1,5 +1,3 @@
-"""Ładowanie i przetwarzanie datasetu NER"""
-
 import json
 from typing import List, Dict, Tuple
 from pathlib import Path
