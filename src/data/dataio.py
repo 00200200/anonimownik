@@ -1,3 +1,28 @@
+"""Ładowanie i przetwarzanie datasetu NER"""
+
+import json
+from typing import List, Dict, Tuple
+from pathlib import Path
+
+
+def load_ner_dataset(filepath: str) -> List[Dict]:
+    dataset = []
+    with open(filepath, "r", encoding="utf-8") as f:
+        for line in f:
+            dataset.append(json.loads(line))
+    return dataset
+
+
+def load_train_test() -> Tuple[List[Dict], List[Dict]]:
+    train_data = load_ner_dataset("data/processed/train.json")
+    test_data = load_ner_dataset("data/processed/test.json")
+    return train_data, test_data
+
+
+def get_entity_text(text: str, entity: Dict) -> str:
+    return text[entity["start"] : entity["end"]]
+
+
 def load_first_n_lines(n=30):
     with open("data/nask_train/orig.txt", "r", encoding="utf-8") as f:
         orig_lines = [f.readline().strip() for _ in range(n)]
@@ -9,8 +34,12 @@ def load_first_n_lines(n=30):
 
 
 if __name__ == "__main__":
-    original, anonymized = load_first_n_lines(30)
+    train_data, test_data = load_train_test()
+    print(f"Train: {len(train_data)}, Test: {len(test_data)}")
 
-    for i, (orig, anon) in enumerate(zip(original, anonymized), 1):
-        print(f"ORIG: {orig[:150]}..." if len(orig) > 150 else f"ORIG: {orig}")
-        print(f"ANON: {anon[:150]}..." if len(anon) > 150 else f"ANON: {anon}")
+    example = next((ex for ex in train_data if ex["entities"]), None)
+    if example:
+        print(f"\nText: {example['text'][:100]}...")
+        for ent in example["entities"][:3]:
+            text = get_entity_text(example["text"], ent)
+            print(f"  {ent['label']}: {text}")
