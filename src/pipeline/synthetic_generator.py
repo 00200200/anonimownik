@@ -324,6 +324,17 @@ class SyntheticGenerator:
             return ''.join([str(random.randint(0, 9)) for _ in range(11)])
         elif entity_type == 'bank-account':
             return ' '.join([f"{random.randint(10,99)}" if i == 0 else f"{random.randint(1000,9999)}" for i in range(7)])
+        elif entity_type == 'username':
+            # Generuj losowy username (litery + cyfry)
+            prefixes = ['user', 'login', 'account', 'nick', 'name']
+            prefix = random.choice(prefixes)
+            suffix = ''.join([str(random.randint(0, 9)) for _ in range(random.randint(2, 4))])
+            return f"{prefix}{suffix}"
+        elif entity_type == 'secret':
+            # Generuj losowe hasło
+            chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%'
+            length = random.randint(8, 12)
+            return ''.join([random.choice(chars) for _ in range(length)])
         
         return None
     
@@ -344,8 +355,8 @@ class SyntheticGenerator:
         """
         result_text = anon_text
         
-        # Przetwarzaj encje w kolejności występowania tokenów
-        for entity in entities_meta:
+        # Przetwarzaj encje od końca (żeby nie zepsuć indeksów przy podmianie)
+        for entity in reversed(entities_meta):
             # Obsługa różnych formatów danych
             if hasattr(entity, 'entity_type'):
                 entity_type = entity.entity_type
@@ -356,9 +367,9 @@ class SyntheticGenerator:
                 original_text = entity.get('original_text') or entity.get('value', '')
                 morph_features = entity.get('morph_features') or entity.get('morph', {})
             
-            # Znajdź token w tekście
+            # Znajdź token w tekście (od końca, żeby znaleźć ostatnie wystąpienie)
             token = f"{{{entity_type}}}"
-            token_pos = result_text.find(token)
+            token_pos = result_text.rfind(token)
             
             if token_pos == -1:
                 continue
