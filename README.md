@@ -180,7 +180,7 @@ print(result.anon_text)
 
 ## 👥 Zespół SolvroGen
 
-Projekt stworzony na hackathon ChallengeRocket.
+Projekt stworzony na hackathon HackNation 2025.
 
 ## 📄 Licencja
 
