@@ -1,6 +1,9 @@
 import json
 from collections import defaultdict
-from anonymizer import Anonymizer
+from pathlib import Path
+
+import torch
+from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 OFFICIAL_LABELS = {
     "name",
@@ -31,11 +34,61 @@ OFFICIAL_LABELS = {
 }
 
 
-def evaluate(test_path: str = "data/processed/test.json"):
-    anon = Anonymizer()
-    tp = fp = fn = 0
-    stats = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
+def load_model(model_path="models/herbert-ner"):
+    labels = json.load(open(Path(model_path) / "labels.json"))["label_list"]
+    id2label = {i: l for i, l in enumerate(labels)}
+    tok = AutoTokenizer.from_pretrained(model_path)
+    mdl = AutoModelForTokenClassification.from_pretrained(model_path)
+    mdl.eval()
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    mdl.to(device)
+    return tok, mdl, id2label, device
 
+
+def predict_spans(text, tokenizer, model, id2label, device, threshold=0.5):
+    enc = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=512,
+        return_offsets_mapping=True,
+    )
+    offsets = enc.pop("offset_mapping")[0]
+    enc = {k: v.to(device) for k, v in enc.items()}
+    with torch.no_grad():
+        logits = model(**enc).logits[0]
+    probs = torch.softmax(logits, dim=-1)
+    pred_ids = probs.argmax(dim=-1)
+    pred_conf = probs.max(dim=-1).values
+    ents = []
+    cur = None
+    for pid, conf, (s, e) in zip(pred_ids, pred_conf, offsets):
+        s, e = s.item(), e.item()
+        if s == e:
+            continue
+        label = id2label[pid.item()]
+        if label == "O" or conf.item() < threshold:
+            if cur:
+                ents.append(cur)
+                cur = None
+            continue
+        if label.startswith("B-"):
+            if cur:
+                ents.append(cur)
+            cur = {"start": s, "end": e, "label": label[2:]}
+        elif label.startswith("I-") and cur and cur["label"] == label[2:]:
+            cur["end"] = e
+        else:
+            if cur:
+                ents.append(cur)
+            cur = None
+    if cur:
+        ents.append(cur)
+    return ents
+
+
+def score(threshold, tokenizer, model, id2label, device, test_path):
+    tp = fp = fn = 0
     for line in open(test_path):
         data = json.loads(line)
         true_spans = {
@@ -45,41 +98,25 @@ def evaluate(test_path: str = "data/processed/test.json"):
         }
         pred_spans = {
             (e["start"], e["end"], e["label"])
-            for e in anon.predict(data["text"])
+            for e in predict_spans(
+                data["text"], tokenizer, model, id2label, device, threshold
+            )
             if e["label"] in OFFICIAL_LABELS
         }
-
-        for s, e, label in true_spans & pred_spans:
-            stats[label]["tp"] += 1
-        for s, e, label in pred_spans - true_spans:
-            stats[label]["fp"] += 1
-        for s, e, label in true_spans - pred_spans:
-            stats[label]["fn"] += 1
-
         tp += len(true_spans & pred_spans)
         fp += len(pred_spans - true_spans)
         fn += len(true_spans - pred_spans)
-
-    print("=== Per-label F1 ===")
-    for label in sorted(OFFICIAL_LABELS):
-        s = stats[label]
-        total = s["tp"] + s["fn"]
-        if total == 0:
-            continue
-        lp = s["tp"] / (s["tp"] + s["fp"]) if s["tp"] + s["fp"] else 0
-        lr = s["tp"] / (s["tp"] + s["fn"]) if s["tp"] + s["fn"] else 0
-        lf1 = 2 * lp * lr / (lp + lr) if lp + lr else 0
-        print(f"{label:20s} F1={lf1:.3f}  P={lp:.3f} R={lr:.3f}  (n={total})")
-
     p = tp / (tp + fp) if tp + fp else 0
     r = tp / (tp + fn) if tp + fn else 0
     f1 = 2 * p * r / (p + r) if p + r else 0
+    return p, r, f1, tp, fp, fn
 
-    print(f"\n=== Overall ===")
-    print(f"Precision: {p:.4f}")
-    print(f"Recall:    {r:.4f}")
-    print(f"F1:        {f1:.4f}")
-    print(f"TP: {tp}, FP: {fp}, FN: {fn}")
+
+def evaluate(test_path: str = "data/processed/test.json"):
+    tok, mdl, id2label, device = load_model()
+    th = 0.3
+    p, r, f1, tp, fp, fn = score(th, tok, mdl, id2label, device, test_path)
+    print(f"th={th:.1f} P={p:.4f} R={r:.4f} F1={f1:.4f} TP={tp} FP={fp} FN={fn}")
 
 
 if __name__ == "__main__":

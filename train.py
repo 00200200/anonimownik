@@ -97,10 +97,7 @@ class NERDataset(Dataset):
 
 class NERModel(L.LightningModule):
     def __init__(
-        self,
-        model_name: str = "allegro/herbert-base-cased",
-        lr: float = 3e-5,
-        class_weights=None,
+        self, model_name: str = "allegro/herbert-base-cased", lr: float = 3e-5
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -108,16 +105,11 @@ class NERModel(L.LightningModule):
             model_name, num_labels=len(LABEL_LIST), id2label=ID2LABEL, label2id=LABEL2ID
         )
         self.lr = lr
-        self.loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     def forward(self, input_ids, attention_mask, labels=None):
-        logits = self.model(input_ids=input_ids, attention_mask=attention_mask).logits
-        loss = None
-        if labels is not None:
-            mask = labels != -100
-            if mask.any():
-                loss = self.loss_fn(logits[mask], labels[mask])
-        return type("obj", (), {"logits": logits, "loss": loss})
+        return self.model(
+            input_ids=input_ids, attention_mask=attention_mask, labels=labels
+        )
 
     def training_step(self, batch, batch_idx):
         out = self(**batch)
@@ -162,29 +154,12 @@ def train(
     print(f"Train: {len(train_ds)} samples, Val: {len(val_ds)} samples")
     print(f"Labels: {len(LABEL_LIST)} ({len(OFFICIAL_LABELS)} categories)")
 
-    weights = []
-    for sample in train_ds.samples:
-        has_politics = any(
-            ent["label"] == "political-view" for ent in sample["entities"]
-        )
-        weights.append(3.0 if has_politics else 1.0)
-    sampler = torch.utils.data.WeightedRandomSampler(
-        weights, num_samples=len(weights), replacement=True
-    )
-
-    counts = {l: 1 for l in LABEL_LIST}
-    for sample in train_ds.samples:
-        for ent in sample["entities"]:
-            counts[f"B-{ent['label']}"] = counts.get(f"B-{ent['label']}", 1) + 1
-            counts[f"I-{ent['label']}"] = counts.get(f"I-{ent['label']}", 1) + 1
-    cw = torch.tensor([1.0 / (counts[l] ** 0.5) for l in LABEL_LIST], dtype=torch.float)
-
     train_loader = DataLoader(
-        train_ds, batch_size=batch_size, sampler=sampler, num_workers=0
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=0
     )
     val_loader = DataLoader(val_ds, batch_size=batch_size, num_workers=0)
 
-    model = NERModel(model_name, lr, class_weights=cw)
+    model = NERModel(model_name, lr)
 
     if Path(warmup_path).exists():
         warmup_ds = NERDataset(warmup_path, tokenizer)
