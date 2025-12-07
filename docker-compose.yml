@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  animownik:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: animownik:latest
+    container_name: animownik
+    volumes:
+      # Zamontuj katalog z danymi wejściowymi
+      - ./data:/app/data:ro
+      # Zamontuj katalog z modelami (jeśli są lokalnie)
+      - ./models:/app/models:ro
+      # Zamontuj katalog wyjściowy
+      - ./outputs:/app/outputs
+      # Opcjonalnie: zamontuj plik wejściowy bezpośrednio
+      - .:/app/workspace:ro
+    working_dir: /app
+    # Przykładowe użycie - można nadpisać w docker-compose run
+    command: ["--help"]
+    # Usuń stdin_open i tty jeśli nie używasz trybu interaktywnego
+    stdin_open: true
+    tty: true
+    environment:
+      - PYTHONUNBUFFERED=1
+

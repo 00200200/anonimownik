@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Documentation
+*.md
+docs/
+
+# Output files
+outputs/
+*.txt
+*.json
+!data/**/*.txt
+
+# Models (opcjonalnie - usuń jeśli chcesz włączyć do obrazu)
+# models/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test*.txt
+*_test.py
+tests/
+
+# Lock files (opcjonalnie - usuń jeśli używasz uv)
+# uv.lock
+

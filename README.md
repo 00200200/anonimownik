@@ -8,6 +8,16 @@
 
 Animownik to pipeline do automatycznej anonimizacji danych wrażliwych (PII) w tekstach polskich. Łączy model NER oparty na HerBERT z regułami RegEx, zapewniając wysoką skuteczność wykrywania encji przy zachowaniu poprawności gramatycznej w danych syntetycznych.
 
+## ⚡ Szybki start
+
+1. **Pobierz model NER** z [Google Drive](https://drive.google.com/file/d/1EqvHlcNaYqUdA3drFEuIjB-uFH_F87ho/view?usp=drive_link)
+2. **Rozpakuj model** do katalogu `models/herbert-ner/`
+3. **Zainstaluj zależności**: `uv sync` (lub `pip install -e .`)
+4. **Zainstaluj spaCy**: `python -m spacy download pl_core_news_sm`
+5. **Uruchom**: `uv run python -m src.pipeline`
+
+Szczegółowe instrukcje znajdziesz w sekcji [Instalacja](#-instalacja) i [Uruchomienie](#-uruchomienie).
+
 ## 🗂️ Struktura repozytorium
 
 ```
@@ -80,36 +90,120 @@ pip install -e .
 # Instalacja modelu spaCy dla polskiego
 python -m spacy download pl_core_news_sm
 
-# Model NER (domyślnie `models/herbert-ner`)
-# Dostarcz własny model lub wytrenuj używając:
+# Pobranie modelu NER
+# Model HerBERT-NER jest wymagany do działania pipeline'u.
+# Pobierz model z Google Drive:
+# https://drive.google.com/file/d/1EqvHlcNaYqUdA3drFEuIjB-uFH_F87ho/view?usp=drive_link
+#
+# Po pobraniu:
+# 1. Rozpakuj archiwum
+# 2. Umieść zawartość w katalogu models/herbert-ner/
+#    (powinien zawierać pliki: config.json, pytorch_model.bin, tokenizer_config.json, itp.)
+#
+# Przykład struktury:
+# models/
+# └── herbert-ner/
+#     ├── config.json
+#     ├── pytorch_model.bin
+#     ├── tokenizer_config.json
+#     ├── vocab.txt
+#     └── labels.json
+#
+# Alternatywnie: wytrenuj własny model używając:
 # python src/scripts/train.py
+```
+
+### Instalacja z Dockerem (zalecane)
+
+```bash
+# 1. Pobierz model NER z Google Drive (zobacz sekcję Instalacja powyżej)
+#    i umieść go w katalogu models/herbert-ner/
+
+# 2. Budowanie obrazu
+docker build -t animownik:latest .
+
+# Lub użyj docker-compose
+docker-compose build
+
+# Uwaga: Model NER musi być dostępny w kontenerze.
+# Docker-compose automatycznie montuje katalog ./models do /app/models
+# Szczegółowa dokumentacja: DOCKER.md
 ```
 
 ## 💻 Uruchomienie
 
+### Szybki start
+
+```bash
+# 1. Upewnij się, że model NER jest pobrany i umieszczony w models/herbert-ner/
+#    (zobacz sekcję Instalacja powyżej)
+
+# 2. Uruchom pipeline w trybie interaktywnym
+uv run python -m src.pipeline
+
+# Lub bezpośrednio:
+python -m src.pipeline
+```
+
 ### Przetwarzanie pojedynczego tekstu
 
 ```bash
-python -m src.scripts.run_pipeline --text "Example text" --model models/herbert-ner
+# Z użyciem uv (zalecane)
+uv run python -m src.pipeline --text "Jan Kowalski mieszka w Warszawie"
+
+# Lub bezpośrednio
+python -m src.pipeline --text "Jan Kowalski mieszka w Warszawie" --model models/herbert-ner
 ```
 
-### Przetwarzanie pliku (generowanie output.txt)
+### Przetwarzanie pliku
 
 ```bash
-# Anonimizacja pliku wejściowego (zapisuje JSON i TXT obok ścieżki output)
-python -m src.scripts.run_pipeline --file data/processed/test.txt --output outputs/result --model models/herbert-ner
+# Anonimizacja pliku wejściowego
+uv run python -m src.pipeline --input data/input.txt --output outputs/result
+
+# Z określeniem formatu wyjściowego (json, text, both)
+uv run python -m src.pipeline --input data/input.txt --output outputs/result --format both
 
 # Tylko anonimizacja (bez generacji syntetycznej)
-python -m src.scripts.run_pipeline --file input.txt --output output_solvrogen.txt --anonymize-only
+uv run python -m src.pipeline --input input.txt --output output_solvrogen.txt --anonymize-only
 
 # Przetwarzanie z pomiarem czasu
-time python -m src.scripts.run_pipeline --file input.txt --output output_solvrogen.txt --anonymize-only
+time uv run python -m src.pipeline --input input.txt --output output_solvrogen.txt --anonymize-only
 ```
 
 ### Tryb interaktywny (wejście z klawiatury)
 
 ```bash
-python -m src.scripts.run_pipeline --model models/herbert-ner
+# Najprostszy sposób - uruchom bez argumentów
+uv run python -m src.pipeline
+
+# Lub z podaniem modelu
+python -m src.pipeline --model models/herbert-ner
+```
+
+Po uruchomieniu wpisz tekst do przetworzenia lub `q` aby wyjść.
+
+### Uruchomienie z Dockerem
+
+```bash
+# Przetwarzanie tekstu
+docker run --rm animownik:latest --text "Jan Kowalski mieszka w Warszawie"
+
+# Przetwarzanie pliku
+docker run --rm \
+  -v $(pwd)/data:/app/data:ro \
+  -v $(pwd)/outputs:/app/outputs \
+  animownik:latest \
+  --file /app/data/input.txt \
+  --output /app/outputs/result.txt
+
+# Użycie skryptu pomocniczego
+./docker-run.sh --text "Test"
+
+# Użycie docker-compose
+docker-compose run --rm animownik --text "Test"
+
+# Szczegółowa dokumentacja: DOCKER.md
 ```
 
 ### Użycie programatyczne
