@@ -1,0 +1,57 @@
+================================================================================
+                    PERFORMANCE REPORT - ZESPÓŁ SOLVROGEN
+================================================================================
+
+TIME
+----
+Czas przetwarzania: [DO UZUPEŁNIENIA] sekund
+(od załadowania tekstu do zapisu wyniku, bez czasu ładowania modelu/bibliotek)
+
+Szczegóły:
+- Liczba przetworzonych linii: [DO UZUPEŁNIENIA]
+- Średni czas na linię: [DO UZUPEŁNIENIA] ms
+
+--------------------------------------------------------------------------------
+
+HARDWARE
+--------
+Typ: CPU / GPU (niepotrzebne skreślić)
+
+Model procesora/karty: [DO UZUPEŁNIENIA]
+Przykłady:
+- CPU: Intel i5-12400 / AMD Ryzen 5 5600X
+- GPU: NVIDIA RTX 3060 / RTX 4090
+
+RAM: [DO UZUPEŁNIENIA] GB
+VRAM (jeśli GPU): [DO UZUPEŁNIENIA] GB
+
+System operacyjny: Linux (WSL2) / Windows / macOS
+
+--------------------------------------------------------------------------------
+
+API
+---
+Czy użyto API PLLUM lub własnego modelu postawionego na zewnętrznym serwerze?
+Odpowiedź: NIE
+
+Użyte modele:
+- HerBERT (herbert-base-cased) - lokalnie
+- spaCy pl_core_news_sm - lokalnie
+
+Wszystkie obliczenia wykonywane są lokalnie bez zewnętrznych API.
+
+--------------------------------------------------------------------------------
+
+DODATKOWE INFORMACJE
+--------------------
+Framework ML: PyTorch 2.x + Transformers 4.37+
+Tokenizer: HerBERT tokenizer
+Analiza morfologiczna: spaCy 3.7+
+
+Optymalizacje:
+- Batch processing dla wielu linii
+- Lazy loading modeli
+- Wykorzystanie GPU jeśli dostępne (torch.cuda)
+
+================================================================================
+
