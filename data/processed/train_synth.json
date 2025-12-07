@@ -1,0 +1,76 @@
+{"text": "Mieszkam w Warszawa.", "entities": [{"start": 11, "end": 19, "label": "city"}]}
+{"text": "Moje stanowisko to kierownik.", "entities": [{"start": 19, "end": 28, "label": "job-title"}]}
+{"text": "Napisz na user123@test.com.", "entities": [{"start": 10, "end": 26, "label": "email"}]}
+{"text": "Moje nazwisko to Wiśniewski.", "entities": [{"start": 17, "end": 27, "label": "surname"}]}
+{"text": "Moje stanowisko to analityk.", "entities": [{"start": 19, "end": 27, "label": "job-title"}]}
+{"text": "Mieszkam w Wrocław.", "entities": [{"start": 11, "end": 18, "label": "city"}]}
+{"text": "Moje stanowisko to architekt.", "entities": [{"start": 19, "end": 28, "label": "job-title"}]}
+{"text": "Dowód: XYZ987654", "entities": [{"start": 7, "end": 16, "label": "document-number"}]}
+{"text": "Pracuję w CD Projekt.", "entities": [{"start": 10, "end": 20, "label": "company"}]}
+{"text": "Adres: ulica Prosta 12/3, 31-000 Kraków", "entities": [{"start": 7, "end": 39, "label": "address"}]}
+{"text": "Moje nazwisko to Kowalski.", "entities": [{"start": 17, "end": 25, "label": "surname"}]}
+{"text": "Popieram Platforma Obywatelska.", "entities": [{"start": 9, "end": 30, "label": "political-view"}]}
+{"text": "Jestem ukraińskiego pochodzenia.", "entities": [{"start": 7, "end": 31, "label": "ethnicity"}]}
+{"text": "mój brat mieszka w Warszawie.", "entities": [{"start": 0, "end": 8, "label": "relative"}]}
+{"text": "Uczyłem się na UW.", "entities": [{"start": 15, "end": 17, "label": "school-name"}]}
+{"text": "Napisz na jan.kowalski@mail.pl.", "entities": [{"start": 10, "end": 30, "label": "email"}]}
+{"text": "Jestem Rom.", "entities": [{"start": 7, "end": 10, "label": "ethnicity"}]}
+{"text": "Nazywam się Kasia.", "entities": [{"start": 12, "end": 17, "label": "name"}]}
+{"text": "Popieram Lewica.", "entities": [{"start": 9, "end": 15, "label": "political-view"}]}
+{"text": "Data urodzenia 2001-01-01", "entities": [{"start": 15, "end": 25, "label": "date-of-birth"}]}
+{"text": "Jestem biseksualna.", "entities": [{"start": 7, "end": 18, "label": "sexual-orientation"}]}
+{"text": "Wydarzenie było 23.09.2023", "entities": [{"start": 16, "end": 26, "label": "date"}]}
+{"text": "Wydarzenie było 1 stycznia 2020", "entities": [{"start": 16, "end": 31, "label": "date"}]}
+{"text": "Popieram PiS.", "entities": [{"start": 9, "end": 12, "label": "political-view"}]}
+{"text": "Uczyłem się na Politechnika Warszawska.", "entities": [{"start": 15, "end": 38, "label": "school-name"}]}
+{"text": "Moje hasło to Haslo!2024", "entities": [{"start": 14, "end": 24, "label": "secret"}]}
+{"text": "Popieram Konfederacja.", "entities": [{"start": 9, "end": 21, "label": "political-view"}]}
+{"text": "Jestem heteroseksualny.", "entities": [{"start": 7, "end": 22, "label": "sexual-orientation"}]}
+{"text": "Pracuję w InPost.", "entities": [{"start": 10, "end": 16, "label": "company"}]}
+{"text": "Uczyłem się na AGH.", "entities": [{"start": 15, "end": 18, "label": "school-name"}]}
+{"text": "Nazywam się Anna.", "entities": [{"start": 12, "end": 16, "label": "name"}]}
+{"text": "Mój PESEL to 01234567890.", "entities": [{"start": 13, "end": 24, "label": "pesel"}]}
+{"text": "Data urodzenia 1990-05-12", "entities": [{"start": 15, "end": 25, "label": "date-of-birth"}]}
+{"text": "Uczyłem się na UJ.", "entities": [{"start": 15, "end": 17, "label": "school-name"}]}
+{"text": "Nazywam się Michał.", "entities": [{"start": 12, "end": 18, "label": "name"}]}
+{"text": "Jestem Żyd.", "entities": [{"start": 7, "end": 10, "label": "ethnicity"}]}
+{"text": "Nazywam się Jan.", "entities": [{"start": 12, "end": 15, "label": "name"}]}
+{"text": "Zadzwoń na 123 456 789.", "entities": [{"start": 11, "end": 22, "label": "phone"}]}
+{"text": "Napisz na ala@example.com.", "entities": [{"start": 10, "end": 25, "label": "email"}]}
+{"text": "Pracuję w PKO BP.", "entities": [{"start": 10, "end": 16, "label": "company"}]}
+{"text": "moja córka mieszka w Warszawie.", "entities": [{"start": 0, "end": 10, "label": "relative"}]}
+{"text": "Karta: 4111 1111 1111 1111", "entities": [{"start": 7, "end": 26, "label": "credit-card-number"}]}
+{"text": "Moje stanowisko to tester.", "entities": [{"start": 19, "end": 25, "label": "job-title"}]}
+{"text": "Wydarzenie było 14-07-2022", "entities": [{"start": 16, "end": 26, "label": "date"}]}
+{"text": "Jestem lesbijka.", "entities": [{"start": 7, "end": 15, "label": "sexual-orientation"}]}
+{"text": "moja siostra mieszka w Warszawie.", "entities": [{"start": 0, "end": 12, "label": "relative"}]}
+{"text": "Karta: 5555-4444-3333-2222", "entities": [{"start": 7, "end": 26, "label": "credit-card-number"}]}
+{"text": "Mój PESEL to 90010112345.", "entities": [{"start": 13, "end": 24, "label": "pesel"}]}
+{"text": "Moje hasło to p$4mKg+vh5", "entities": [{"start": 14, "end": 24, "label": "secret"}]}
+{"text": "Mieszkam w Poznań.", "entities": [{"start": 11, "end": 17, "label": "city"}]}
+{"text": "Moje hasło to sekret123!", "entities": [{"start": 14, "end": 24, "label": "secret"}]}
+{"text": "Jestem gej.", "entities": [{"start": 7, "end": 10, "label": "sexual-orientation"}]}
+{"text": "Nazywam się Piotr.", "entities": [{"start": 12, "end": 17, "label": "name"}]}
+{"text": "Mieszkam w Kraków.", "entities": [{"start": 11, "end": 17, "label": "city"}]}
+{"text": "Pracuję w Orlen.", "entities": [{"start": 10, "end": 15, "label": "company"}]}
+{"text": "Pracuję w Allegro.", "entities": [{"start": 10, "end": 17, "label": "company"}]}
+{"text": "Moje stanowisko to programista.", "entities": [{"start": 19, "end": 30, "label": "job-title"}]}
+{"text": "Numer konta 45 1140 2004 0000 3202 1234 5678", "entities": [{"start": 12, "end": 44, "label": "bank-account"}]}
+{"text": "Login: @janek123", "entities": [{"start": 7, "end": 16, "label": "username"}]}
+{"text": "Mój PESEL to 72031298765.", "entities": [{"start": 13, "end": 24, "label": "pesel"}]}
+{"text": "Adres: ul. Długa 5, 00-001 Warszawa", "entities": [{"start": 7, "end": 35, "label": "address"}]}
+{"text": "Moje nazwisko to Lewandowski.", "entities": [{"start": 17, "end": 28, "label": "surname"}]}
+{"text": "Login: login-abc", "entities": [{"start": 7, "end": 16, "label": "username"}]}
+{"text": "Nazywam się Agnieszka.", "entities": [{"start": 12, "end": 21, "label": "name"}]}
+{"text": "mój syn mieszka w Warszawie.", "entities": [{"start": 0, "end": 7, "label": "relative"}]}
+{"text": "Login: user_name42", "entities": [{"start": 7, "end": 18, "label": "username"}]}
+{"text": "Zadzwoń na +48 600 700 800.", "entities": [{"start": 11, "end": 26, "label": "phone"}]}
+{"text": "Uczyłem się na PG.", "entities": [{"start": 15, "end": 17, "label": "school-name"}]}
+{"text": "Numer konta 12 3456 7890 1234 5678 9012 3456", "entities": [{"start": 12, "end": 44, "label": "bank-account"}]}
+{"text": "Dowód: ABC123456", "entities": [{"start": 7, "end": 16, "label": "document-number"}]}
+{"text": "Data urodzenia 1988/11/03", "entities": [{"start": 15, "end": 25, "label": "date-of-birth"}]}
+{"text": "Moje nazwisko to Nowak.", "entities": [{"start": 17, "end": 22, "label": "surname"}]}
+{"text": "Moje nazwisko to Zielińska.", "entities": [{"start": 17, "end": 26, "label": "surname"}]}
+{"text": "Mieszkam w Gdańsk.", "entities": [{"start": 11, "end": 17, "label": "city"}]}
+{"text": "Zadzwoń na 501-234-567.", "entities": [{"start": 11, "end": 22, "label": "phone"}]}
+{"text": "Dowód: FD1772", "entities": [{"start": 7, "end": 13, "label": "document-number"}]}
