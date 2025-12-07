@@ -2,6 +2,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+import time
 from typing import Dict, List, Optional, Union
 
 from .anonymizer import Anonymizer, AnonymizationResult, EntityMeta
@@ -17,6 +18,9 @@ class PipelineResult:
     entities: List[EntityMeta] = field(default_factory=list)
 
     entity_counts: Dict[str, int] = field(default_factory=dict)
+    elapsed_total: float = 0.0
+    elapsed_anonymization: float = 0.0
+    elapsed_generation: float = 0.0
 
     def to_dict(self) -> Dict:
         return {
@@ -25,6 +29,9 @@ class PipelineResult:
             "synthetic_text": self.synthetic_text,
             "entities": [e.to_dict() for e in self.entities],
             "entity_counts": self.entity_counts,
+            "elapsed_total": self.elapsed_total,
+            "elapsed_anonymization": self.elapsed_anonymization,
+            "elapsed_generation": self.elapsed_generation,
         }
 
     def to_json(self, indent: int = 2) -> str:
@@ -104,11 +111,14 @@ class AnonymizationPipeline:
         Returns:
             PipelineResult z wynikami wszystkich etapów
         """
+        t_total_start = time.perf_counter()
         # Sprawdź czy tekst jest już anonimizowany
         if self._is_already_anonymized(text):
             # Tekst jest już anonimizowany - tylko generuj syntetyczny
             anon_text = text
+            t_gen_start = time.perf_counter()
             synthetic_text = self.generator.generate_from_anon_text(text)
+            t_gen = time.perf_counter() - t_gen_start
 
             # Wyciągnij encje na podstawie istniejących tokenów w nawiasach kwadratowych
             entities_meta: List[EntityMeta] = []
@@ -136,16 +146,23 @@ class AnonymizationPipeline:
                 synthetic_text=synthetic_text,
                 entities=entities_meta,
                 entity_counts=entity_counts,
+                elapsed_total=time.perf_counter() - t_total_start,
+                elapsed_anonymization=0.0,
+                elapsed_generation=t_gen,
             )
 
         # Normalny proces: anonimizacja + generacja syntetyczna
         # Etap 1: Anonimizacja
+        t_anon_start = time.perf_counter()
         anon_result = self.anonymizer.anonymize(text, use_regex=self.use_regex_rules)
+        t_anon = time.perf_counter() - t_anon_start
 
         # Etap 2: Generacja syntetyczna
+        t_gen_start = time.perf_counter()
         synthetic_text = self.generator.generate(
             anon_result.anon_text, anon_result.entities_meta
         )
+        t_gen = time.perf_counter() - t_gen_start
 
         # Oblicz statystyki
         entity_counts: Dict[str, int] = {}
@@ -159,6 +176,9 @@ class AnonymizationPipeline:
             synthetic_text=synthetic_text,
             entities=anon_result.entities_meta,
             entity_counts=entity_counts,
+            elapsed_total=time.perf_counter() - t_total_start,
+            elapsed_anonymization=t_anon,
+            elapsed_generation=t_gen,
         )
 
     def process_batch(self, texts: List[str]) -> BatchResult:
@@ -232,6 +252,11 @@ class AnonymizationPipeline:
                         f.write(r.anonymized_text + "\n\n")
                         f.write("=== SYNTETYCZNY ===\n")
                         f.write(r.synthetic_text + "\n\n")
+                        f.write(
+                            f"=== CZAS === total: {r.elapsed_total:.4f}s | "
+                            f"anon: {r.elapsed_anonymization:.4f}s | "
+                            f"gen: {r.elapsed_generation:.4f}s\n\n"
+                        )
                         f.write("-" * 50 + "\n\n")
 
         return result

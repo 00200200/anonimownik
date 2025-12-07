@@ -809,6 +809,13 @@ class SyntheticGenerator:
                     for i in range(7)
                 ]
             )
+        elif entity_type == "document-number":
+            # Prosty format: 2 litery + 6 cyfr
+            letters = "".join(
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(2)
+            )
+            digits = "".join(str(random.randint(0, 9)) for _ in range(6))
+            return f"{letters}{digits}"
         elif entity_type == "username":
             # Generuj losowy username (litery + cyfry)
             prefixes = ["user", "login", "account", "nick", "name"]
@@ -841,6 +848,24 @@ class SyntheticGenerator:
             Tekst z podmienionymi tokenami na nowe wartości
         """
         result_text = anon_text
+        chosen_gender: Optional[str] = None
+        chosen_sex_text: Optional[str] = None
+
+        # Jeśli w encjach jest sex, wybierz wartość z góry dla spójności
+        for ent in entities_meta:
+            label = (
+                ent.entity_type
+                if hasattr(ent, "entity_type")
+                else ent.get("entity_type") or ent.get("label")
+            )
+            if label == "sex":
+                if random.random() < 0.5:
+                    chosen_gender = "fem"
+                    chosen_sex_text = "kobieta"
+                else:
+                    chosen_gender = "masc"
+                    chosen_sex_text = "mężczyzna"
+                break
 
         # Przetwarzaj encje od końca (żeby nie zepsuć indeksów przy podmianie)
         for entity in reversed(entities_meta):
@@ -867,10 +892,23 @@ class SyntheticGenerator:
             if token_pos == -1:
                 continue
 
-            # Pobierz odmienioną wartość
-            new_value = self._get_value_for_entity(
-                entity_type, morph_features, original_text
-            )
+            # Ustal płeć globalną jeśli mamy sex
+            if entity_type == "sex":
+                if chosen_gender is None:
+                    # jeśli wcześniej nie wybrano, zrób to teraz
+                    if random.random() < 0.5:
+                        chosen_gender = "fem"
+                        chosen_sex_text = "kobieta"
+                    else:
+                        chosen_gender = "masc"
+                        chosen_sex_text = "mężczyzna"
+                new_value = chosen_sex_text
+            else:
+                mf = dict(morph_features) if morph_features else {}
+                if chosen_gender and "gender" not in mf:
+                    mf["gender"] = chosen_gender
+                # Pobierz odmienioną wartość
+                new_value = self._get_value_for_entity(entity_type, mf, original_text)
 
             if new_value is None:
                 continue
