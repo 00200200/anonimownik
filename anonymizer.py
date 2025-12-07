@@ -3,17 +3,15 @@ import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 REGEXES = {
-    "email": re.compile(r"[a-zA-Z0-9][\\w.+-]*@[\\w.-]+\\.[a-zA-Z]{2,}"),
-    "phone": re.compile(r"(?:\\+?48)?[\\s-]?(?:\\d{3}[\\s-]?){2}\\d{3}"),
-    "pesel": re.compile(r"\\b\\d{11}\\b"),
-    "credit-card-number": re.compile(r"(?:\\d[\\s-]?){13,19}\\b"),
-    "bank-account": re.compile(r"(?:\\d{2}[\\s-]?){13,16}\\d{2}\\b"),
-    "document-number": re.compile(
-        r"\\b[A-Z]{2,3}\\d{4,7}\\b|\\b\\d{4}-\\d{4}-\\d{4}\\b"
-    ),
-    "date": re.compile(r"\\b\\d{1,2}[./-]\\d{1,2}[./-]\\d{2,4}\\b"),
+    "email": re.compile(r"[a-zA-Z0-9][\w.+-]*@[\w.-]+\.[a-zA-Z]{2,}"),
+    "phone": re.compile(r"(?:\+?48)?[\s-]?(?:\d{3}[\s-]?){2}\d{3}"),
+    "pesel": re.compile(r"\b\d{11}\b"),
+    "credit-card-number": re.compile(r"(?:\d[\s-]?){13,19}\b"),
+    "bank-account": re.compile(r"(?:\d{2}[\s-]?){13,16}\d{2}\b"),
+    "document-number": re.compile(r"\b[A-Z]{2,3}\d{4,7}\b|\b\d{4}-\d{4}-\d{4}\b"),
+    "date": re.compile(r"\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b"),
     "date-of-birth": re.compile(
-        r"\\b(?:19|20)\\d{2}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])\\b"
+        r"\b(?:19|20)\d{2}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\d|3[01])\b"
     ),
 }
 
@@ -98,11 +96,6 @@ class Anonymizer:
             if merged and not (
                 ent["end"] <= merged[-1]["start"] or ent["start"] >= merged[-1]["end"]
             ):
-                prev = merged[-1]
-                cur_len = ent["end"] - ent["start"]
-                prev_len = prev["end"] - prev["start"]
-                if cur_len > prev_len:
-                    merged[-1] = ent
                 continue
             merged.append(ent)
         return merged
