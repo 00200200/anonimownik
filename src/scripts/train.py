@@ -141,7 +141,7 @@ def train(
     warmup_path: str = "data/processed/train_synth.json",
     output_dir: str = "models/herbert-ner",
     model_name: str = "allegro/herbert-base-cased",
-    epochs: int = 5,
+    epochs: int = 6,
     warmup_epochs: int = 1,
     batch_size: int = 8,
     lr: float = 3e-5,
