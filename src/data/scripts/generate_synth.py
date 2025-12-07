@@ -34,7 +34,6 @@ relatives = ["mój brat", "moja siostra", "mój syn", "moja córka"]
 def samples():
     data = []
 
-    # IDs and contact
     for pesel in ["90010112345", "72031298765", "01234567890"]:
         text = f"Mój PESEL to {pesel}."
         data.append(add(text, [place(text, pesel, "pesel")]))
@@ -57,7 +56,6 @@ def samples():
         text = f"Dowód: {doc}"
         data.append(add(text, [place(text, doc, "document-number")]))
 
-    # Dates
     for dob in ["1990-05-12", "1988/11/03", "2001-01-01"]:
         text = f"Data urodzenia {dob}"
         data.append(add(text, [place(text, dob, "date-of-birth")]))
@@ -65,7 +63,6 @@ def samples():
         text = f"Wydarzenie było {dt}"
         data.append(add(text, [place(text, dt, "date")]))
 
-    # Names, address, city
     for n in names:
         text = f"Nazywam się {n}."
         data.append(add(text, [place(text, n, "name")]))
