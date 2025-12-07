@@ -210,8 +210,12 @@ pip install spacy torch transformers
 python -m spacy download pl_core_news_sm
 ```
 
-## Testy
+## Użycie CLI
 
 ```bash
-python -m src.scripts.test_synthetic_generator
+# Uruchomienie pipeline'u
+python -m src.scripts.run_pipeline "Jan Kowalski mieszka w Warszawie."
+
+# Tryb interaktywny
+python -m src.scripts.run_pipeline
 ```

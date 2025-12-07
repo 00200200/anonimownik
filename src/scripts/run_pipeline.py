@@ -19,7 +19,7 @@ from pathlib import Path
 # Dodaj ścieżkę do src
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipeline import AnonymizationPipeline, create_pipeline
+from src.pipeline import AnonymizationPipeline, create_pipeline
 
 
 def main():
