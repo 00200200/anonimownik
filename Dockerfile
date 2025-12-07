@@ -29,9 +29,9 @@ RUN pip install --no-cache-dir uv && \
 RUN python -m spacy download pl_core_news_sm
 
 # Skopiuj kod źródłowy
-COPY src/ ./src/
-COPY data/ ./data/ 2>/dev/null || true
-COPY models/ ./models/ 2>/dev/null || true
+# COPY src/ ./src/
+# COPY data/ ./data/ 2>/dev/null || true
+# COPY models/ ./models/ 2>/dev/null || true
 
 # Utwórz katalogi na dane wyjściowe
 RUN mkdir -p /app/outputs /app/data
