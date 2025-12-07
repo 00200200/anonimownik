@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -71,9 +72,31 @@ class AnonymizationPipeline:
             spacy_model=spacy_model,
         )
     
+    def _is_already_anonymized(self, text: str) -> bool:
+        """
+        Sprawdza, czy tekst jest już anonimizowany (zawiera tokeny w nawiasach).
+        
+        Args:
+            text: Tekst do sprawdzenia
+            
+        Returns:
+            True jeśli tekst zawiera tokeny w nawiasach kwadratowych lub klamrowych
+        """
+        # Sprawdź czy są tokeny w nawiasach kwadratowych [name] lub klamrowych {name}
+        square_bracket_pattern = r'\[([^\]]+)\]'
+        curly_bracket_pattern = r'\{([^}]+)\}'
+        
+        has_square = bool(re.search(square_bracket_pattern, text))
+        has_curly = bool(re.search(curly_bracket_pattern, text))
+        
+        return has_square or has_curly
+    
     def process(self, text: str) -> PipelineResult:
         """
         Przetwarza pojedynczy tekst przez cały pipeline.
+        
+        Jeśli tekst jest już anonimizowany (zawiera tokeny w nawiasach),
+        pomija etap anonimizacji i przechodzi od razu do generacji syntetycznej.
         
         Args:
             text: Tekst do przetworzenia
@@ -81,6 +104,22 @@ class AnonymizationPipeline:
         Returns:
             PipelineResult z wynikami wszystkich etapów
         """
+        # Sprawdź czy tekst jest już anonimizowany
+        if self._is_already_anonymized(text):
+            # Tekst jest już anonimizowany - tylko generuj syntetyczny
+            anon_text = text
+            synthetic_text = self.generator.generate_from_anon_text(text)
+            
+            # Dla już anonimizowanych tekstów nie mamy metadanych encji
+            return PipelineResult(
+                original_text=text,
+                anonymized_text=anon_text,
+                synthetic_text=synthetic_text,
+                entities=[],
+                entity_counts={},
+            )
+        
+        # Normalny proces: anonimizacja + generacja syntetyczna
         # Etap 1: Anonimizacja
         anon_result = self.anonymizer.anonymize(text, use_regex=self.use_regex_rules)
         

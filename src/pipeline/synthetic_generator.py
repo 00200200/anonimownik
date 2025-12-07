@@ -393,14 +393,20 @@ class SyntheticGenerator:
         """
         Prostsza wersja - znajduje tokeny w tekście i zamienia je na losowe wartości.
         Używa mianownika (forma podstawowa).
+        Obsługuje oba formaty: {name} i [name].
         
         Args:
-            anon_text: Tekst z tokenami typu {name}, {surname} itp.
+            anon_text: Tekst z tokenami typu {name}, {surname} lub [name], [surname] itp.
         
         Returns:
             Tekst z podmienionymi tokenami
         """
         result_text = anon_text
+        
+        # Najpierw konwertuj nawiasy kwadratowe na klamrowe dla jednolitego przetwarzania
+        result_text = re.sub(r'\[([^\]]+)\]', r'{\1}', result_text)
+        
+        # Teraz przetwarzaj tokeny w nawiasach klamrowych
         token_pattern = r'\{([^}]+)\}'
         
         def replace_token(match):
