@@ -15,23 +15,44 @@ import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 ENTITY_TYPES = {
-    "name", "surname", "age", "date-of-birth", "date", "sex", "religion",
-    "political-view", "ethnicity", "sexual-orientation", "health", "relative",
-    "city", "address", "email", "phone", "pesel", "document-number",
-    "company", "school-name", "job-title", "bank-account", "credit-card-number",
-    "username", "secret",
+    "name",
+    "surname",
+    "age",
+    "date-of-birth",
+    "date",
+    "sex",
+    "religion",
+    "political-view",
+    "ethnicity",
+    "sexual-orientation",
+    "health",
+    "relative",
+    "city",
+    "address",
+    "email",
+    "phone",
+    "pesel",
+    "document-number",
+    "company",
+    "school-name",
+    "job-title",
+    "bank-account",
+    "credit-card-number",
+    "username",
+    "secret",
 }
 
 
 @dataclass
 class EntityMeta:
     """Metadane wykrytej encji."""
+
     start: int
     end: int
     entity_type: str
     original_text: str
     morph_features: Dict[str, str] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict:
         return {
             "start": self.start,
@@ -45,9 +66,10 @@ class EntityMeta:
 @dataclass
 class AnonymizationResult:
     """Wynik anonimizacji."""
+
     anon_text: str
     entities_meta: List[EntityMeta]
-    
+
     def to_dict(self) -> Dict:
         return {
             "anon_text": self.anon_text,
@@ -57,7 +79,7 @@ class AnonymizationResult:
 
 class Anonymizer:
     """Moduł anonimizacji z wykrywaniem encji i zapisem cech morfologicznych."""
-    
+
     def __init__(
         self,
         model_path: Optional[str] = None,
@@ -78,16 +100,16 @@ class Anonymizer:
                 f"Model spaCy '{spacy_model}' nie jest zainstalowany. "
                 f"Uruchom: python -m spacy download {spacy_model}"
             )
-        
+
         # Opcjonalnie załaduj model NER
         self.ner_model = None
         self.ner_tokenizer = None
         self.id2label = None
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         if model_path and Path(model_path).exists():
             self._load_ner_model(model_path)
-    
+
     def _load_ner_model(self, model_path: str):
         """Ładuje model NER."""
         labels_path = Path(model_path) / "labels.json"
@@ -95,26 +117,28 @@ class Anonymizer:
             with open(labels_path, encoding="utf-8") as f:
                 labels = json.load(f)["label_list"]
             self.id2label = {i: l for i, l in enumerate(labels)}
-        
+
         self.ner_tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.ner_model = AutoModelForTokenClassification.from_pretrained(model_path)
         self.ner_model.eval()
         self.ner_model.to(self.device)
-    
-    def _extract_morph_features(self, text: str, start: int, end: int) -> Dict[str, str]:
+
+    def _extract_morph_features(
+        self, text: str, start: int, end: int
+    ) -> Dict[str, str]:
         """
         Wyciąga cechy morfologiczne dla fragmentu tekstu.
-        
+
         Args:
             text: Pełny tekst
             start: Początek fragmentu
             end: Koniec fragmentu
-        
+
         Returns:
             Słownik cech morfologicznych (case, gender, number, etc.)
         """
         doc = self.nlp(text)
-        
+
         features = {}
         for token in doc:
             # Sprawdź czy token pokrywa się z naszym fragmentem
@@ -122,25 +146,25 @@ class Anonymizer:
                 morph = token.morph.to_dict()
                 if morph:
                     # Zapisz cechy morfologiczne
-                    for key in ['Case', 'Gender', 'Number', 'Animacy', 'Aspect']:
+                    for key in ["Case", "Gender", "Number", "Animacy", "Aspect"]:
                         if key in morph:
                             features[key.lower()] = morph[key]
                 break
             elif token.idx <= start < token.idx + len(token.text):
                 morph = token.morph.to_dict()
                 if morph:
-                    for key in ['Case', 'Gender', 'Number', 'Animacy', 'Aspect']:
+                    for key in ["Case", "Gender", "Number", "Animacy", "Aspect"]:
                         if key in morph:
                             features[key.lower()] = morph[key]
                 break
-        
+
         return features
-    
+
     def _predict_ner_spans(self, text: str, threshold: float = 0.3) -> List[Dict]:
         """Wykrywa encje za pomocą modelu NER."""
         if not self.ner_model:
             return []
-        
+
         enc = self.ner_tokenizer(
             text,
             return_tensors="pt",
@@ -150,30 +174,30 @@ class Anonymizer:
         )
         offsets = enc.pop("offset_mapping")[0]
         enc = {k: v.to(self.device) for k, v in enc.items()}
-        
+
         with torch.no_grad():
             logits = self.ner_model(**enc).logits[0]
-        
+
         probs = torch.softmax(logits, dim=-1)
         pred_ids = probs.argmax(dim=-1)
         pred_conf = probs.max(dim=-1).values
-        
+
         ents = []
         cur = None
-        
+
         for pid, conf, (s, e) in zip(pred_ids, pred_conf, offsets):
             s, e = s.item(), e.item()
             if s == e:
                 continue
-            
+
             label = self.id2label[pid.item()]
-            
+
             if label == "O" or conf.item() < threshold:
                 if cur:
                     ents.append(cur)
                     cur = None
                 continue
-            
+
             if label.startswith("B-"):
                 if cur:
                     ents.append(cur)
@@ -184,24 +208,24 @@ class Anonymizer:
                 if cur:
                     ents.append(cur)
                 cur = None
-        
+
         if cur:
             ents.append(cur)
-        
+
         return ents
-    
+
     def _apply_regex_rules(self, text: str) -> List[Dict]:
         """Wykrywa encje za pomocą reguł regexowych."""
         entities = []
         used_ranges = set()
-        
+
         def is_overlapping(start: int, end: int) -> bool:
             """Sprawdza czy zakres nachodzi na już wykryte encje."""
             for s, e in used_ranges:
                 if not (end <= s or start >= e):
                     return True
             return False
-        
+
         def add_entity(start: int, end: int, label: str):
             """Dodaje encję jeśli nie nachodzi na inne."""
             if not is_overlapping(start, end):
@@ -209,128 +233,136 @@ class Anonymizer:
                 used_ranges.add((start, end))
                 return True
             return False
-        
+
         # 1. Email
-        for m in re.finditer(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', text):
+        for m in re.finditer(
+            r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b", text
+        ):
             add_entity(m.start(), m.end(), "email")
-        
+
         # 2. Numer konta bankowego (26 cyfr)
-        for m in re.finditer(r'\b\d{2}(?:[-\s]?\d{4}){6}\b', text):
+        for m in re.finditer(r"\b\d{2}(?:[-\s]?\d{4}){6}\b", text):
             add_entity(m.start(), m.end(), "bank-account")
-        
+
         # 3. Karty kredytowe (16 cyfr)
-        for m in re.finditer(r'\b(?:\d{4}[-\s]?){3}\d{4}\b', text):
+        for m in re.finditer(r"\b(?:\d{4}[-\s]?){3}\d{4}\b", text):
             add_entity(m.start(), m.end(), "credit-card-number")
-        
+
         # 4. PESEL - 11 cyfr SAMODZIELNIE (nie jako część innego ciągu)
         #    Musi być otoczony granicami słów i nie poprzedzony przez +
-        for m in re.finditer(r'(?<!\+)(?<!\d)\b\d{11}\b(?!\d)', text):
+        for m in re.finditer(r"(?<!\+)(?<!\d)\b\d{11}\b(?!\d)", text):
             add_entity(m.start(), m.end(), "pesel")
-        
+
         # 5. Telefony - polskie numery (RÓŻNE FORMATY)
         #    Używamy [ -] zamiast [-\s] żeby nie łapać nowych linii
         phone_patterns = [
             # +48 z różnymi formatami (9 cyfr po +48)
-            r'\+48[- ]?(?:\d[- ]?){9}(?!\d)',
+            r"\+48[- ]?(?:\d[- ]?){9}(?!\d)",
             # Stacjonarny z kierunkowym: 22 123 45 67, (22) 123-45-67
-            r'(?<!\d)(?:\(\d{2}\)[ ]?|\b\d{2}[- ])\d{3}[- ]?\d{2}[- ]?\d{2}\b',
+            r"(?<!\d)(?:\(\d{2}\)[ ]?|\b\d{2}[- ])\d{3}[- ]?\d{2}[- ]?\d{2}\b",
             # Komórkowy 9-cyfrowy zaczynający się od 5-9: 500 600 700
-            r'(?<!\d)\b[5-9]\d{2}[- ]?\d{3}[- ]?\d{3}\b(?!\d)',
+            r"(?<!\d)\b[5-9]\d{2}[- ]?\d{3}[- ]?\d{3}\b(?!\d)",
             # Format XXX XXX XXX (ogólny 9-cyfrowy z separatorami)
-            r'(?<!\d)\b\d{3}[- ]\d{3}[- ]\d{3}\b(?!\d)',
+            r"(?<!\d)\b\d{3}[- ]\d{3}[- ]\d{3}\b(?!\d)",
         ]
         for pattern in phone_patterns:
             for m in re.finditer(pattern, text):
                 # Dodatkowa walidacja - upewnij się że to prawdziwy telefon
                 phone_text = m.group()
-                digits_only = re.sub(r'\D', '', phone_text)
+                digits_only = re.sub(r"\D", "", phone_text)
                 # Polski telefon: 9 cyfr (lub 11 z +48)
                 if len(digits_only) in (9, 11, 12):
                     add_entity(m.start(), m.end(), "phone")
-        
+
         # 6. Numery dokumentów
-        for m in re.finditer(r'\b[A-Z]{2,3}[-\s]?\d{6,7}\b', text):
+        for m in re.finditer(r"\b[A-Z]{2,3}[-\s]?\d{6,7}\b", text):
             add_entity(m.start(), m.end(), "document-number")
-        
+
         # 7. Daty
-        for m in re.finditer(r'\b\d{1,2}[-./]\d{1,2}[-./]\d{2,4}\b', text):
+        for m in re.finditer(r"\b\d{1,2}[-./]\d{1,2}[-./]\d{2,4}\b", text):
             add_entity(m.start(), m.end(), "date")
-        for m in re.finditer(r'\b\d{4}[-./]\d{2}[-./]\d{2}\b', text):
+        for m in re.finditer(r"\b\d{4}[-./]\d{2}[-./]\d{2}\b", text):
             add_entity(m.start(), m.end(), "date")
-        
+
         return entities
-    
+
     def predict(self, text: str, use_regex: bool = True) -> List[EntityMeta]:
         """
         Wykrywa encje w tekście.
-        
+
         Args:
             text: Tekst do analizy
             use_regex: Czy używać reguł regexowych
-        
+
         Returns:
             Lista metadanych encji z cechami morfologicznymi
         """
         entities = []
-        
+
         # NER z modelu
         if self.ner_model:
             for ent in self._predict_ner_spans(text):
                 if ent["label"] in ENTITY_TYPES:
                     entities.append(ent)
-        
+
         # Reguły regexowe
         if use_regex:
             for ent in self._apply_regex_rules(text):
                 # Sprawdź czy nie nachodzi na istniejącą encję
                 overlaps = False
                 for existing in entities:
-                    if not (ent["end"] <= existing["start"] or ent["start"] >= existing["end"]):
+                    if not (
+                        ent["end"] <= existing["start"]
+                        or ent["start"] >= existing["end"]
+                    ):
                         overlaps = True
                         break
                 if not overlaps:
                     entities.append(ent)
-        
+
         # Sortuj po pozycji
         entities.sort(key=lambda e: e["start"])
-        
+
         # Wyciągnij cechy morfologiczne dla każdej encji
         result = []
         for ent in entities:
-            original_text = text[ent["start"]:ent["end"]]
-            morph_features = self._extract_morph_features(text, ent["start"], ent["end"])
-            
-            result.append(EntityMeta(
-                start=ent["start"],
-                end=ent["end"],
-                entity_type=ent["label"],
-                original_text=original_text,
-                morph_features=morph_features,
-            ))
-        
+            original_text = text[ent["start"] : ent["end"]]
+            morph_features = self._extract_morph_features(
+                text, ent["start"], ent["end"]
+            )
+
+            result.append(
+                EntityMeta(
+                    start=ent["start"],
+                    end=ent["end"],
+                    entity_type=ent["label"],
+                    original_text=original_text,
+                    morph_features=morph_features,
+                )
+            )
+
         return result
-    
+
     def anonymize(self, text: str, use_regex: bool = True) -> AnonymizationResult:
         """
         Anonimizuje tekst, zastępując encje tokenami.
-        
+
         Args:
             text: Tekst do anonimizacji
             use_regex: Czy używać reguł regexowych
-        
+
         Returns:
             AnonymizationResult z anon_text i entities_meta
         """
         entities = self.predict(text, use_regex)
-        
+
         # Zamień encje na tokeny od końca (żeby nie zepsuć indeksów)
         anon_text = text
         for entity in reversed(entities):
-            token = f"{{{entity.entity_type}}}"
-            anon_text = anon_text[:entity.start] + token + anon_text[entity.end:]
-        
+            token = f"[{entity.entity_type}]"
+            anon_text = anon_text[: entity.start] + token + anon_text[entity.end :]
+
         return AnonymizationResult(
             anon_text=anon_text,
             entities_meta=entities,
         )
-
