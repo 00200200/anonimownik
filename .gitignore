@@ -205,10 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-models/
 __pycache__/
 *.pyc
 .lightning/
 lightning_logs/
 
 
+models/

@@ -4,28 +4,26 @@
 
 TIME
 ----
-Czas przetwarzania: [DO UZUPEŁNIENIA] sekund
+Czas przetwarzania: 177.444 sekund
 (od załadowania tekstu do zapisu wyniku, bez czasu ładowania modelu/bibliotek)
 
 Szczegóły:
-- Liczba przetworzonych linii: [DO UZUPEŁNIENIA]
-- Średni czas na linię: [DO UZUPEŁNIENIA] ms
+- Liczba przetworzonych linii: 317
+- Średni czas na linię: 0.5440s/linia
 
 --------------------------------------------------------------------------------
 
 HARDWARE
 --------
-Typ: CPU / GPU (niepotrzebne skreślić)
+Typ: CPU /  (niepotrzebne skreślić)
 
 Model procesora/karty: [DO UZUPEŁNIENIA]
 Przykłady:
-- CPU: Intel i5-12400 / AMD Ryzen 5 5600X
-- GPU: NVIDIA RTX 3060 / RTX 4090
+- CPU: Macbook M2 PRO ( MPS )
 
-RAM: [DO UZUPEŁNIENIA] GB
-VRAM (jeśli GPU): [DO UZUPEŁNIENIA] GB
+RAM: 16 GB
 
-System operacyjny: Linux (WSL2) / Windows / macOS
+System operacyjny:macOS
 
 --------------------------------------------------------------------------------
 

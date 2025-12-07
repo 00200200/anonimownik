@@ -1,4 +1,3 @@
-
 import json
 import re
 from pathlib import Path
@@ -123,7 +122,7 @@ def main():
     dataset = load_and_process_data(orig_path, anon_path)
     print(f"Przetworzono {len(dataset)} linii")
 
-    train_data, test_data = split_train_test(dataset, test_ratio=0.1)
+    train_data, test_data = split_train_test(dataset, test_ratio=0.05)
 
     train_path = output_dir / "train.json"
     test_path = output_dir / "test.json"
