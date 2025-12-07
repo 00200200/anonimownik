@@ -29,13 +29,36 @@ POLITICAL_WORDS = {
 
 
 class Anonymizer:
-    def __init__(self, model_path: str = "models/herbert-ner"):
+    def __init__(
+        self,
+        model_path: str = "models/herbert-ner",
+        ban_model_path: str | None = "NASK-PIB/BANonymizer-PL",
+    ):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForTokenClassification.from_pretrained(model_path)
         self.model.to(self.device)
         self.model.eval()
         self.id2label = {int(k): v for k, v in self.model.config.id2label.items()}
+
+        self.ban_tokenizer = None
+        self.ban_model = None
+        self.ban_id2label = None
+        if ban_model_path:
+            try:
+                self.ban_tokenizer = AutoTokenizer.from_pretrained(ban_model_path)
+                self.ban_model = AutoModelForTokenClassification.from_pretrained(
+                    ban_model_path
+                )
+                self.ban_model.to(self.device)
+                self.ban_model.eval()
+                self.ban_id2label = {
+                    int(k): v for k, v in self.ban_model.config.id2label.items()
+                }
+            except Exception:
+                self.ban_tokenizer = None
+                self.ban_model = None
+                self.ban_id2label = None
 
     def regex_hits(self, text: str) -> list[dict]:
         hits = []
@@ -86,10 +109,47 @@ class Anonymizer:
             out.append(cur)
         return out
 
+    def ban_hits(self, text: str) -> list[dict]:
+        if not self.ban_model:
+            return []
+        enc = self.ban_tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512,
+            return_offsets_mapping=True,
+        )
+        offsets = enc.pop("offset_mapping")[0]
+        enc = {k: v.to(self.device) for k, v in enc.items()}
+        with torch.no_grad():
+            logits = self.ban_model(**enc).logits[0]
+        preds = logits.argmax(dim=-1).tolist()
+        out = []
+        cur = None
+        for pid, (s, e) in zip(preds, offsets):
+            s, e = s.item(), e.item()
+            if s == e:
+                continue
+            label = self.ban_id2label.get(pid, "O")
+            if label.startswith("B-"):
+                if cur:
+                    out.append(cur)
+                cur = {"start": s, "end": e, "label": label[2:].lower()}
+            elif label.startswith("I-") and cur and cur["label"] == label[2:].lower():
+                cur["end"] = e
+            else:
+                if cur:
+                    out.append(cur)
+                cur = None
+        if cur:
+            out.append(cur)
+        return out
+
     def predict(self, text: str) -> list[dict]:
         reg = self.regex_hits(text)
         mod = self.model_hits(text)
-        all_ents = reg + mod
+        ban = self.ban_hits(text)
+        all_ents = reg + mod + ban
         all_ents.sort(key=lambda x: (x["start"], -(x["end"] - x["start"])))
         merged = []
         for ent in all_ents:

@@ -97,7 +97,7 @@ class NERDataset(Dataset):
 
 class NERModel(L.LightningModule):
     def __init__(
-        self, model_name: str = "allegro/herbert-base-cased", lr: float = 3e-5
+        self, model_name: str = "allegro/herbert-base-cased", lr: float = 2e-5
     ):
         super().__init__()
         self.save_hyperparameters()
