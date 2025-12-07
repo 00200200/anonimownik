@@ -1,25 +1,8 @@
-#!/usr/bin/env python3
-"""Skrypt do uruchamiania pipeline'u anonimizacji.
-
-Użycie:
-    # Tryb interaktywny
-    python -m scripts.run_pipeline
-    
-    # Z tekstem
-    python -m scripts.run_pipeline "Jan Kowalski mieszka w Warszawie."
-    
-    # Przetwarzanie pliku
-    python -m scripts.run_pipeline --file dane.txt --output wynik.json
-"""
-
 import argparse
 import sys
 from pathlib import Path
 
-# Dodaj ścieżkę do src
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.pipeline import AnonymizationPipeline, create_pipeline
+from src.pipeline import  create_pipeline
 
 
 def main():

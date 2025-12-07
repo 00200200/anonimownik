@@ -1,8 +1,3 @@
-"""Moduł 2 - Generator syntetyczny.
-
-Przyjmuje anon_text i entities_meta z modułu anonimizacji,
-generuje nowe wartości i odmienia je zgodnie z cechami morfologicznymi.
-"""
 
 import random
 import re
@@ -11,13 +6,7 @@ from typing import Dict, List, Optional, Union
 
 import spacy
 
-# ============================================================================
-# Słowniki danych syntetycznych - formy podstawowe (mianownik)
-# ============================================================================
-
-# Imiona żeńskie z formami odmienionymi
 NAMES_FEMALE = {
-    # mianownik: {przypadek: forma}
     "Anna": {"nom": "Anna", "gen": "Anny", "dat": "Annie", "acc": "Annę", "inst": "Anną", "loc": "Annie"},
     "Maria": {"nom": "Maria", "gen": "Marii", "dat": "Marii", "acc": "Marię", "inst": "Marią", "loc": "Marii"},
     "Katarzyna": {"nom": "Katarzyna", "gen": "Katarzyny", "dat": "Katarzynie", "acc": "Katarzynę", "inst": "Katarzyną", "loc": "Katarzynie"},

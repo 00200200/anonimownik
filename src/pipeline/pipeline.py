@@ -1,9 +1,3 @@
-"""Główny pipeline anonimizacji i generacji syntetycznej.
-
-Łączy moduł anonimizacji (NER + reguły) z generatorem syntetycznym
-w jeden spójny workflow.
-"""
-
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,25 +9,15 @@ from .synthetic_generator import SyntheticGenerator
 
 @dataclass
 class PipelineResult:
-    """Wynik przetworzenia pipeline'u."""
     
-    # Tekst wejściowy
     original_text: str
-    
-    # Tekst zanonimizowany (z tokenami typu {name})
     anonymized_text: str
-    
-    # Tekst syntetyczny (z nowymi danymi)
     synthetic_text: str
-    
-    # Metadane wykrytych encji
     entities: List[EntityMeta] = field(default_factory=list)
     
-    # Statystyki
     entity_counts: Dict[str, int] = field(default_factory=dict)
     
     def to_dict(self) -> Dict:
-        """Konwertuje wynik do słownika."""
         return {
             "original_text": self.original_text,
             "anonymized_text": self.anonymized_text,
@@ -43,14 +27,11 @@ class PipelineResult:
         }
     
     def to_json(self, indent: int = 2) -> str:
-        """Konwertuje wynik do JSON."""
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent)
 
 
 @dataclass
 class BatchResult:
-    """Wynik przetworzenia wielu tekstów."""
-    
     results: List[PipelineResult] = field(default_factory=list)
     total_entities: int = 0
     entity_type_counts: Dict[str, int] = field(default_factory=dict)
@@ -67,19 +48,6 @@ class BatchResult:
 
 
 class AnonymizationPipeline:
-    """
-    Pipeline anonimizacji i generacji syntetycznej dla języka polskiego.
-    
-    Etapy:
-    1. Anonimizacja (NER + reguły) - wykrycie encji i zastąpienie tokenami
-    2. Generacja syntetyczna - podmiana tokenów na nowe, odmienione wartości
-    
-    Przykład użycia:
-        >>> pipeline = AnonymizationPipeline()
-        >>> result = pipeline.process("Jestem Jan Kowalski z Warszawy.")
-        >>> print(result.anonymized_text)  # "Jestem {name} {surname} z {city}."
-        >>> print(result.synthetic_text)   # "Jestem Piotr Nowak z Krakowa."
-    """
     
     def __init__(
         self,
@@ -89,19 +57,8 @@ class AnonymizationPipeline:
         seed: Optional[int] = None,
         use_regex_rules: bool = True,
     ):
-        """
-        Inicjalizuje pipeline.
-        
-        Args:
-            ner_model_path: Ścieżka do wytrenowanego modelu NER (opcjonalne)
-            spacy_model: Nazwa modelu spaCy do analizy morfologicznej
-            device: Urządzenie (cuda/cpu), automatyczne jeśli None
-            seed: Ziarno losowości dla generatora syntetycznego
-            use_regex_rules: Czy używać reguł regex do wykrywania encji
-        """
         self.use_regex_rules = use_regex_rules
         
-        # Inicjalizuj anonimizer
         self.anonymizer = Anonymizer(
             model_path=ner_model_path,
             spacy_model=spacy_model,
@@ -148,15 +105,6 @@ class AnonymizationPipeline:
         )
     
     def process_batch(self, texts: List[str]) -> BatchResult:
-        """
-        Przetwarza wiele tekstów.
-        
-        Args:
-            texts: Lista tekstów do przetworzenia
-            
-        Returns:
-            BatchResult z wynikami dla wszystkich tekstów
-        """
         results = []
         total_entities = 0
         entity_type_counts: Dict[str, int] = {}
@@ -182,18 +130,6 @@ class AnonymizationPipeline:
         output_format: str = "json",
         split_paragraphs: bool = True,
     ) -> BatchResult:
-        """
-        Przetwarza plik tekstowy.
-        
-        Args:
-            input_path: Ścieżka do pliku wejściowego
-            output_path: Ścieżka do pliku wyjściowego (opcjonalna)
-            output_format: Format wyjścia ('json', 'text', 'both')
-            split_paragraphs: Czy dzielić na akapity
-            
-        Returns:
-            BatchResult z wynikami
-        """
         input_path = Path(input_path)
         
         # Wczytaj tekst
@@ -240,18 +176,6 @@ class AnonymizationPipeline:
         pattern: str = "*.txt",
         output_format: str = "json",
     ) -> Dict[str, BatchResult]:
-        """
-        Przetwarza wszystkie pliki w katalogu.
-        
-        Args:
-            input_dir: Katalog wejściowy
-            output_dir: Katalog wyjściowy (opcjonalny)
-            pattern: Wzorzec nazw plików (np. "*.txt")
-            output_format: Format wyjścia
-            
-        Returns:
-            Słownik {nazwa_pliku: BatchResult}
-        """
         input_dir = Path(input_dir)
         results = {}
         
@@ -271,15 +195,6 @@ class AnonymizationPipeline:
         return results
     
     def anonymize_only(self, text: str) -> AnonymizationResult:
-        """
-        Wykonuje tylko anonimizację (bez generacji syntetycznej).
-        
-        Args:
-            text: Tekst do anonimizacji
-            
-        Returns:
-            AnonymizationResult z anon_text i entities_meta
-        """
         return self.anonymizer.anonymize(text, use_regex=self.use_regex_rules)
     
     def generate_synthetic(
@@ -287,16 +202,6 @@ class AnonymizationPipeline:
         anon_text: str,
         entities_meta: Optional[List[EntityMeta]] = None,
     ) -> str:
-        """
-        Generuje tekst syntetyczny z zanonimizowanego tekstu.
-        
-        Args:
-            anon_text: Tekst z tokenami ({name}, {surname} itp.)
-            entities_meta: Metadane encji (opcjonalne, dla odmiany)
-            
-        Returns:
-            Tekst z podmienionymi tokenami
-        """
         if entities_meta:
             return self.generator.generate(anon_text, entities_meta)
         else:
@@ -308,17 +213,6 @@ def create_pipeline(
     seed: Optional[int] = None,
     **kwargs
 ) -> AnonymizationPipeline:
-    """
-    Fabryka do tworzenia pipeline'u z domyślnymi ustawieniami.
-    
-    Args:
-        model_path: Ścieżka do modelu NER
-        seed: Ziarno losowości
-        **kwargs: Dodatkowe argumenty dla AnonymizationPipeline
-        
-    Returns:
-        Skonfigurowany AnonymizationPipeline
-    """
     # Sprawdź domyślną ścieżkę modelu
     if model_path is None:
         default_model = Path("models/herbert-ner")

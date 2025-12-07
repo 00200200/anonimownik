@@ -14,7 +14,6 @@ import spacy
 import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
-# Domyślne typy encji do anonimizacji
 ENTITY_TYPES = {
     "name", "surname", "age", "date-of-birth", "date", "sex", "religion",
     "political-view", "ethnicity", "sexual-orientation", "health", "relative",
