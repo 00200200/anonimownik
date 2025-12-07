@@ -171,6 +171,38 @@ class SyntheticGenerator:
         self.schools = SCHOOLS.copy()
         self.addresses = ADDRESSES.copy()
     
+    def add_entity_dictionary(self, entity_type: str, values: List[str]) -> None:
+        """
+        Dodaje lub nadpisuje słownik dla danego typu encji.
+        
+        Uwaga: Dla typów z odmianą (name, surname, city, job-title) wartości 
+        będą używane tylko w mianowniku. Dla pełnej odmiany użyj słowników
+        z wszystkimi przypadkami.
+        
+        Args:
+            entity_type: Typ encji (np. "name", "city", "company")
+            values: Lista wartości w mianowniku
+        """
+        if entity_type == 'political-view':
+            self.political_views = values
+        elif entity_type == 'company':
+            self.companies = values
+        elif entity_type == 'school-name':
+            self.schools = values
+        elif entity_type == 'address':
+            self.addresses = values
+        elif entity_type == 'name':
+            # Dla imion twórz prosty słownik z tylko mianownikiem
+            self.names_male = {v: {"nom": v} for v in values}
+            self.names_female = {}
+        elif entity_type == 'surname':
+            self.surnames_male = {v: {"nom": v} for v in values}
+            self.surnames_female = {}
+        elif entity_type == 'city':
+            self.cities = {v: {"nom": v} for v in values}
+        elif entity_type == 'job-title':
+            self.job_titles = {v: {"nom": v} for v in values}
+    
     def _detect_gender_from_text(self, text: str) -> str:
         """Wykrywa płeć na podstawie tekstu (końcówki)."""
         text_lower = text.lower()

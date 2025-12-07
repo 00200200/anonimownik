@@ -93,7 +93,8 @@ class Anonymizer:
         """Ładuje model NER."""
         labels_path = Path(model_path) / "labels.json"
         if labels_path.exists():
-            labels = json.load(open(labels_path))["label_list"]
+            with open(labels_path, encoding="utf-8") as f:
+                labels = json.load(f)["label_list"]
             self.id2label = {i: l for i, l in enumerate(labels)}
         
         self.ner_tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -193,38 +194,70 @@ class Anonymizer:
     def _apply_regex_rules(self, text: str) -> List[Dict]:
         """Wykrywa encje za pomocą reguł regexowych."""
         entities = []
+        used_ranges = set()
         
-        # PESEL - 11 cyfr
-        for m in re.finditer(r'\b\d{11}\b', text):
-            entities.append({
-                "start": m.start(),
-                "end": m.end(),
-                "label": "pesel",
-            })
+        def is_overlapping(start: int, end: int) -> bool:
+            """Sprawdza czy zakres nachodzi na już wykryte encje."""
+            for s, e in used_ranges:
+                if not (end <= s or start >= e):
+                    return True
+            return False
         
-        # Email
+        def add_entity(start: int, end: int, label: str):
+            """Dodaje encję jeśli nie nachodzi na inne."""
+            if not is_overlapping(start, end):
+                entities.append({"start": start, "end": end, "label": label})
+                used_ranges.add((start, end))
+                return True
+            return False
+        
+        # 1. Email
         for m in re.finditer(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', text):
-            entities.append({
-                "start": m.start(),
-                "end": m.end(),
-                "label": "email",
-            })
+            add_entity(m.start(), m.end(), "email")
         
-        # Telefon
-        for m in re.finditer(r'(?:\+48\s?)?(?:\d{3}[-\s]?){2}\d{3}', text):
-            entities.append({
-                "start": m.start(),
-                "end": m.end(),
-                "label": "phone",
-            })
+        # 2. Numer konta bankowego (26 cyfr)
+        for m in re.finditer(r'\b\d{2}(?:[-\s]?\d{4}){6}\b', text):
+            add_entity(m.start(), m.end(), "bank-account")
         
-        # Numer konta bankowego
-        for m in re.finditer(r'\b\d{2}(?:\s?\d{4}){6}\b', text):
-            entities.append({
-                "start": m.start(),
-                "end": m.end(),
-                "label": "bank-account",
-            })
+        # 3. Karty kredytowe (16 cyfr)
+        for m in re.finditer(r'\b(?:\d{4}[-\s]?){3}\d{4}\b', text):
+            add_entity(m.start(), m.end(), "credit-card-number")
+        
+        # 4. PESEL - 11 cyfr SAMODZIELNIE (nie jako część innego ciągu)
+        #    Musi być otoczony granicami słów i nie poprzedzony przez +
+        for m in re.finditer(r'(?<!\+)(?<!\d)\b\d{11}\b(?!\d)', text):
+            add_entity(m.start(), m.end(), "pesel")
+        
+        # 5. Telefony - polskie numery (RÓŻNE FORMATY)
+        #    Używamy [ -] zamiast [-\s] żeby nie łapać nowych linii
+        phone_patterns = [
+            # +48 z różnymi formatami (9 cyfr po +48)
+            r'\+48[- ]?(?:\d[- ]?){9}(?!\d)',
+            # Stacjonarny z kierunkowym: 22 123 45 67, (22) 123-45-67
+            r'(?<!\d)(?:\(\d{2}\)[ ]?|\b\d{2}[- ])\d{3}[- ]?\d{2}[- ]?\d{2}\b',
+            # Komórkowy 9-cyfrowy zaczynający się od 5-9: 500 600 700
+            r'(?<!\d)\b[5-9]\d{2}[- ]?\d{3}[- ]?\d{3}\b(?!\d)',
+            # Format XXX XXX XXX (ogólny 9-cyfrowy z separatorami)
+            r'(?<!\d)\b\d{3}[- ]\d{3}[- ]\d{3}\b(?!\d)',
+        ]
+        for pattern in phone_patterns:
+            for m in re.finditer(pattern, text):
+                # Dodatkowa walidacja - upewnij się że to prawdziwy telefon
+                phone_text = m.group()
+                digits_only = re.sub(r'\D', '', phone_text)
+                # Polski telefon: 9 cyfr (lub 11 z +48)
+                if len(digits_only) in (9, 11, 12):
+                    add_entity(m.start(), m.end(), "phone")
+        
+        # 6. Numery dokumentów
+        for m in re.finditer(r'\b[A-Z]{2,3}[-\s]?\d{6,7}\b', text):
+            add_entity(m.start(), m.end(), "document-number")
+        
+        # 7. Daty
+        for m in re.finditer(r'\b\d{1,2}[-./]\d{1,2}[-./]\d{2,4}\b', text):
+            add_entity(m.start(), m.end(), "date")
+        for m in re.finditer(r'\b\d{4}[-./]\d{2}[-./]\d{2}\b', text):
+            add_entity(m.start(), m.end(), "date")
         
         return entities
     
