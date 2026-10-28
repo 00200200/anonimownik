@@ -1,53 +1,57 @@
-# Animownik - Pipeline Anonimizacji dla Języka Polskiego
+# Anonimownik - pipeline anonimizacji dla języka polskiego
 
 **Zespół: SolvroGen**
 
-> Hybrydowe rozwiązanie NER (HerBERT) + RegEx do anonimizacji tekstów polskich z obsługą odmiany morfologicznej.
+Pipeline NER (HerBERT) + RegEx do zastępowania wykrytych danych w tekstach polskich tagami lub danymi syntetycznymi.
 
-## 📋 O projekcie
+## O projekcie
 
-Animownik to pipeline do automatycznej anonimizacji danych wrażliwych (PII) w tekstach polskich. Łączy model NER oparty na HerBERT z regułami RegEx, zapewniając wysoką skuteczność wykrywania encji przy zachowaniu poprawności gramatycznej w danych syntetycznych.
+Anonimownik to prototyp zespołu SolvroGen z hackathonu HackNation 2025. Łączy model NER oparty na HerBERT z regułami RegEx. Generator podstawień korzysta z cech morfologicznych spaCy, słowników odmienionych form i heurystyk.
 
-## ⚡ Szybki start
+Repozytorium zawiera skrypt pomiaru precision, recall i F1 dla NER, ale nie publikuje jego wyników ani oceny poprawności gramatycznej generatora. Raport `docs/performance_solvrogen.txt` opisuje czas przetwarzania, nie jakość wykrywania. Pipeline może pomijać dane i tworzyć błędne odmiany; wynik wymaga sprawdzenia przed udostępnieniem i nie gwarantuje anonimowości.
+
+## Szybki start
 
 1. **Pobierz model NER** z [Google Drive](https://drive.google.com/file/d/1EqvHlcNaYqUdA3drFEuIjB-uFH_F87ho/view?usp=drive_link)
 2. **Rozpakuj model** do katalogu `models/herbert-ner/`
 3. **Zainstaluj zależności**: `uv sync` (lub `pip install -e .`)
-4. **Zainstaluj spaCy**: `python -m spacy download pl_core_news_sm`
+4. **Zainstaluj model spaCy**: `uv run python -m spacy download pl_core_news_sm` (przy instalacji przez pip: `python -m spacy download pl_core_news_sm`)
 5. **Uruchom**: `uv run python -m src.pipeline`
 
-Szczegółowe instrukcje znajdziesz w sekcji [Instalacja](#-instalacja) i [Uruchomienie](#-uruchomienie).
+Szczegółowe instrukcje znajdziesz w sekcji [Instalacja](#instalacja) i [Uruchomienie](#uruchomienie).
 
-## 🗂️ Struktura repozytorium
+## Struktura repozytorium
 
 ```
-animownik/
+anonimownik/
 ├── src/
 │   ├── pipeline/              # Główny pipeline anonimizacji
 │   │   ├── anonymizer.py      # Moduł anonimizacji (NER + regex)
 │   │   ├── synthetic_generator.py  # Generator syntetycznych danych
 │   │   ├── pipeline.py        # Połączony pipeline
 │   │   ├── cli.py             # Interfejs CLI
-│   │   └── README.md          # Szczegółowa dokumentacja
+│   │   └── __main__.py        # Punkt wejścia python -m src.pipeline
 │   └── scripts/
 │       ├── train.py           # Trenowanie modelu NER
 │       ├── evaluate.py        # Ewaluacja modelu
 │       └── run_pipeline.py    # Uruchamianie pipeline'u
 ├── data/                      # Dane treningowe
 ├── models/                    # Wytrenowane modele (wagi HerBERT-NER)
-├── output_solvrogen.txt       # Zanonimizowany plik wynikowy
-├── performance_solvrogen.txt  # Metryki wydajności
-├── preprocessing_solvrogen.md # Opis przetwarzania danych
-├── synthetic_generation_solvrogen.md  # Opis generacji syntetycznej
+├── generate_output.py         # Zapis tekstu z tagami, linia po linii
+├── docs/
+│   ├── output_SolvroGen.txt    # Plik wynikowy z konkursu
+│   ├── performance_solvrogen.txt  # Czas przetwarzania i opis sprzętu
+│   ├── preprocessing_solvrogen.md # Opis przetwarzania danych
+│   └── synthetic_generation_solvrogen.md # Opis generacji syntetycznej
 └── pyproject.toml             # Konfiguracja projektu
 ```
 
-## 🔧 Jak to działa
+## Jak to działa
 
 ### Proces anonimizacji
 
-1. **Tokenizacja** - tekst jest dzielony na tokeny przy użyciu spaCy
-2. **Analiza morfologiczna** - dla każdego tokenu zapisywane są cechy morfologiczne (przypadek, rodzaj, liczba)
+1. **Tokenizacja** - NER używa tokenizera HerBERT; spaCy służy do analizy morfologicznej
+2. **Analiza morfologiczna** - dla wykrytych encji zbierane są dostępne cechy (przypadek, rodzaj, liczba)
 3. **Wykrywanie encji** - hybrydowe podejście:
    - **Model NER (HerBERT)** - wykrywa imiona, nazwiska, miasta, firmy itp.
    - **Reguły RegEx** - wykrywa PESEL, email, telefon, nr konta, nr dokumentu
@@ -56,15 +60,17 @@ animownik/
 ### Założenia
 
 - Tagi mają format: `[name]`, `[surname]`, `[city]`, `[phone]`, `[pesel]`, `[email]` itp.
-- Każda linia wejściowa odpowiada jednej linii wyjściowej (1:1)
-- Cechy morfologiczne są zachowywane dla generacji syntetycznej
+- `generate_output.py` przetwarza tekst linia po linii; główny CLI `--input` dzieli plik na akapity i zapisuje raport
+- Dostępne cechy morfologiczne służą do wyboru podstawień; brakujące formy mogą zostać zastąpione mianownikiem
+- NER przetwarza maksymalnie 512 tokenów jednego fragmentu; dalsza część jest pomijana przez model, choć RegEx nadal analizuje cały tekst
+- Bez istniejącego katalogu modelu NER pipeline może działać tylko z RegEx, bez wykrywania encji przez HerBERT
 
 ### Co robi pipeline
 
 - **Moduł 1**: anonimizuje tekst, przechowuje metadane encji i cechy morfologiczne (spaCy)
 - **Moduł 2**: generuje syntetyczne podstawienia dla wykrytych tokenów
 
-## 🚀 Instalacja
+## Instalacja
 
 ### Wymagania
 
@@ -78,17 +84,18 @@ animownik/
 
 ```bash
 # Klonowanie repozytorium
-git clone https://github.com/your-repo/animownik.git
-cd animownik
+git clone https://github.com/00200200/anonimownik.git
+cd anonimownik
 
 # Instalacja zależności z uv (zalecane)
-uv sync .
+uv sync
 
 # Lub z pip:
 pip install -e .
 
 # Instalacja modelu spaCy dla polskiego
-python -m spacy download pl_core_news_sm
+uv run python -m spacy download pl_core_news_sm
+# Przy instalacji przez pip: python -m spacy download pl_core_news_sm
 
 # Pobranie modelu NER
 # Model HerBERT-NER jest wymagany do działania pipeline'u.
@@ -113,7 +120,9 @@ python -m spacy download pl_core_news_sm
 # python src/scripts/train.py
 ```
 
-### Instalacja z Dockerem (zalecane)
+### Instalacja z Dockerem
+
+Konfiguracja wymaga uwagi: `Dockerfile` instaluje projekt przed skopiowaniem `README.md` i źródeł, a instrukcja kopiowania `src/` jest zakomentowana. Budowanie może wymagać poprawienia Dockerfile; przykłady uruchomienia poniżej zakładają zbudowany obraz i montują źródła oraz model. Lokalny CLI opisano wyżej.
 
 ```bash
 # 1. Pobierz model NER z Google Drive (zobacz sekcję Instalacja powyżej)
@@ -127,10 +136,9 @@ docker-compose build
 
 # Uwaga: Model NER musi być dostępny w kontenerze.
 # Docker-compose automatycznie montuje katalog ./models do /app/models
-# Szczegółowa dokumentacja: DOCKER.md
 ```
 
-## 💻 Uruchomienie
+## Uruchomienie
 
 ### Szybki start
 
@@ -158,18 +166,20 @@ python -m src.pipeline --text "Jan Kowalski mieszka w Warszawie" --model models/
 ### Przetwarzanie pliku
 
 ```bash
-# Anonimizacja pliku wejściowego
+# Raport z tekstem oryginalnym, tekstem z tagami i podstawieniami syntetycznymi
 uv run python -m src.pipeline --input data/input.txt --output outputs/result
 
 # Z określeniem formatu wyjściowego (json, text, both)
 uv run python -m src.pipeline --input data/input.txt --output outputs/result --format both
 
 # Tylko anonimizacja (bez generacji syntetycznej)
-uv run python -m src.pipeline --input input.txt --output output_solvrogen.txt --anonymize-only
+uv run python generate_output.py input.txt output_solvrogen.txt
 
 # Przetwarzanie z pomiarem czasu
-time uv run python -m src.pipeline --input input.txt --output output_solvrogen.txt --anonymize-only
+time uv run python generate_output.py input.txt output_solvrogen.txt
 ```
+
+Eksporty `text`, `json` i `both` głównego CLI zawierają **oryginalny tekst**; JSON zawiera również oryginalne wartości encji. Flaga `--anonymize-only` nie zmienia eksportu plików. Aby zapisać sam tekst z tagami, użyj `generate_output.py` jak wyżej albo zapisz wyłącznie `result.anon_text` z API. Także taki tekst może zawierać niewykryte dane.
 
 ### Tryb interaktywny (wejście z klawiatury)
 
@@ -186,24 +196,24 @@ Po uruchomieniu wpisz tekst do przetworzenia lub `q` aby wyjść.
 ### Uruchomienie z Dockerem
 
 ```bash
-# Przetwarzanie tekstu
-docker run --rm animownik:latest --text "Jan Kowalski mieszka w Warszawie"
+# Przetwarzanie tekstu (entrypoint src.scripts.run_pipeline przyjmuje tekst pozycyjnie)
+docker run --rm \
+  -v "$(pwd)/src:/app/src:ro" \
+  -v "$(pwd)/models:/app/models:ro" \
+  animownik:latest "Jan Kowalski mieszka w Warszawie"
 
 # Przetwarzanie pliku
 docker run --rm \
+  -v "$(pwd)/src:/app/src:ro" \
+  -v "$(pwd)/models:/app/models:ro" \
   -v $(pwd)/data:/app/data:ro \
   -v $(pwd)/outputs:/app/outputs \
   animownik:latest \
   --file /app/data/input.txt \
   --output /app/outputs/result.txt
 
-# Użycie skryptu pomocniczego
-./docker-run.sh --text "Test"
-
 # Użycie docker-compose
-docker-compose run --rm animownik --text "Test"
-
-# Szczegółowa dokumentacja: DOCKER.md
+docker-compose run --rm -v "$(pwd)/src:/app/src:ro" animownik "Test"
 ```
 
 ### Użycie programatyczne
@@ -220,14 +230,14 @@ print(result.anon_text)
 # "[name] [surname] mieszka w [city]. PESEL: [pesel]"
 ```
 
-## 📊 Obsługiwane typy encji
+## Przykładowe typy encji
 
 | Typ | Opis | Metoda wykrywania |
 |-----|------|-------------------|
 | `[name]` | Imię | NER |
 | `[surname]` | Nazwisko | NER |
 | `[city]` | Miasto | NER |
-| `[address]` | Adres | NER + RegEx |
+| `[address]` | Adres | NER |
 | `[email]` | Email | RegEx |
 | `[phone]` | Telefon | RegEx |
 | `[pesel]` | PESEL | RegEx (11 cyfr) |
@@ -240,18 +250,17 @@ print(result.anon_text)
 | `[age]` | Wiek | NER |
 | `[sex]` | Płeć | NER |
 
-## 📁 Pliki konkursu
+## Pliki konkursu
 
 | Plik | Opis |
 |------|------|
 | `README.md` | Ten plik - dokumentacja projektu |
-| `output_solvrogen.txt` | Zanonimizowany plik wynikowy |
-| `performance_solvrogen.txt` | Czas przetwarzania i opis sprzętu |
-| `preprocessing_solvrogen.md` | Opis procesu zbierania i przetwarzania danych |
-| `synthetic_generation_solvrogen.md` | Opis metody generacji danych syntetycznych |
-| `presentation_solvrogen.pdf` | Prezentacja projektu (max 5 slajdów) |
+| `docs/output_SolvroGen.txt` | Plik wynikowy z konkursu |
+| `docs/performance_solvrogen.txt` | Czas przetwarzania i opis sprzętu |
+| `docs/preprocessing_solvrogen.md` | Opis procesu zbierania i przetwarzania danych |
+| `docs/synthetic_generation_solvrogen.md` | Opis metody generacji danych syntetycznych |
 
-## 🏗️ Architektura
+## Architektura
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -272,6 +281,6 @@ print(result.anon_text)
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 👥 Zespół SolvroGen
+## Zespół SolvroGen
 
 Projekt stworzony na hackathon HackNation 2025.
